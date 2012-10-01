@@ -20,15 +20,16 @@ module ScheduleAtts
     options = options.dup
     options[:interval] = options[:interval].to_i
     options[:start_date] &&= ScheduleAttributes.parse_in_timezone(options[:start_date])
-    options[:date]       &&= ScheduleAttributes.parse_in_timezone(options[:date])
+    options[:end_date] &&= ScheduleAttributes.parse_in_timezone(options[:end_date])
+    options[:start_time] &&= ScheduleAttributes.parse_in_timezone(options[:start_time])
+    options[:end_time] &&= ScheduleAttributes.parse_in_timezone(options[:end_time])
     options[:until_date] &&= ScheduleAttributes.parse_in_timezone(options[:until_date])
-    options[:duration] = options[:duration].to_i
 
     if options[:repeat].to_i == 0
-      @schedule = IceCube::Schedule.new(options[:date])
-      @schedule.add_recurrence_date(options[:date])
+      @schedule = IceCube::Schedule.new(options[:start_date], :end_time => options[:end_time])
+      @schedule.add_recurrence_date(options[:start_date])
     else
-      @schedule = IceCube::Schedule.new(options[:start_date])
+      @schedule = IceCube::Schedule.new(options[:start_date], :end_time => options[:end_time])
 
       rule = case options[:interval_unit]
         when 'day'
@@ -42,19 +43,19 @@ module ScheduleAtts
       @schedule.add_recurrence_rule(rule)
     end
 
-    @schedule.duration = options[:duration] if options[:duration] > 0
-
     self.schedule_yaml = @schedule.to_yaml
   end
 
   def schedule_attributes
     atts = {}
 
+    atts[:start_date] = schedule.start_date.to_date
+    atts[:start_time] = schedule.start_date.to_time
+    atts[:end_date]   = schedule.end_date.to_date
+    atts[:end_time]   = schedule.end_date.to_time
+
     if rule = schedule.rrules.first
       atts[:repeat]     = 1
-      atts[:start_date] = schedule.start_date.to_date
-      atts[:date]       = Date.today # for populating the other part of the form
-      atts[:duration]   = schedule.duration
       rule_hash = rule.to_hash
       atts[:interval] = rule_hash[:interval]
 
@@ -76,9 +77,6 @@ module ScheduleAtts
       end
     else
       atts[:repeat]     = 0
-      atts[:date]       = schedule.start_date.to_date
-      atts[:start_date] = Date.today # for populating the other part of the form
-      atts[:duration]   = schedule.duration
     end
 
     OpenStruct.new(atts)
