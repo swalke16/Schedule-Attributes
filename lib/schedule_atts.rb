@@ -22,6 +22,7 @@ module ScheduleAtts
     options[:start_date] &&= ScheduleAttributes.parse_in_timezone(options[:start_date])
     options[:date]       &&= ScheduleAttributes.parse_in_timezone(options[:date])
     options[:until_date] &&= ScheduleAttributes.parse_in_timezone(options[:until_date])
+    options[:duration] = options[:duration].to_i
 
     if options[:repeat].to_i == 0
       @schedule = IceCube::Schedule.new(options[:date])
@@ -41,6 +42,8 @@ module ScheduleAtts
       @schedule.add_recurrence_rule(rule)
     end
 
+    @schedule.duration = options[:duration] if options[:duration] > 0
+
     self.schedule_yaml = @schedule.to_yaml
   end
 
@@ -51,7 +54,7 @@ module ScheduleAtts
       atts[:repeat]     = 1
       atts[:start_date] = schedule.start_date.to_date
       atts[:date]       = Date.today # for populating the other part of the form
-
+      atts[:duration]   = schedule.duration
       rule_hash = rule.to_hash
       atts[:interval] = rule_hash[:interval]
 
@@ -75,6 +78,7 @@ module ScheduleAtts
       atts[:repeat]     = 0
       atts[:date]       = schedule.start_date.to_date
       atts[:start_date] = Date.today # for populating the other part of the form
+      atts[:duration]   = schedule.duration
     end
 
     OpenStruct.new(atts)
