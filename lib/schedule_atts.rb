@@ -25,11 +25,14 @@ module ScheduleAtts
     options[:end_time] &&= ScheduleAttributes.parse_in_timezone(options[:end_time])
     options[:until_date] &&= ScheduleAttributes.parse_in_timezone(options[:until_date])
 
+    start_time = combine_time(options[:start_date], options[:start_time])
+    end_time = combine_time(options[:end_date], options[:end_time])
+
     if options[:repeat].to_i == 0
-      @schedule = IceCube::Schedule.new(options[:start_date], :end_time => options[:end_time])
-      @schedule.add_recurrence_date(options[:start_date])
+      @schedule = IceCube::Schedule.new(start_time, :end_time => end_time)
+      @schedule.add_recurrence_date(start_time)
     else
-      @schedule = IceCube::Schedule.new(options[:start_date], :end_time => options[:end_time])
+      @schedule = IceCube::Schedule.new(start_time, :end_time => end_time)
 
       rule = case options[:interval_unit]
         when 'day'
@@ -49,10 +52,10 @@ module ScheduleAtts
   def schedule_attributes
     atts = {}
 
-    atts[:start_date] = schedule.start_date.to_date
-    atts[:start_time] = schedule.start_date.to_time
-    atts[:end_date]   = schedule.end_date.to_date
-    atts[:end_time]   = schedule.end_date.to_time
+    atts[:start_date] = schedule.start_time.to_date
+    atts[:start_time] = schedule.start_time.to_time
+    atts[:end_date]   = schedule.end_time ? schedule.end_time.to_date : schedule.start_time.to_date
+    atts[:end_time]   = schedule.end_time ? schedule.end_time.to_time : (schedule.start_time + 1.hour).to_time
 
     if rule = schedule.rrules.first
       atts[:repeat]     = 1
@@ -90,6 +93,10 @@ module ScheduleAtts
       Time.parse(str)
     end
   end
+
+  def combine_time(date, time)
+    Time.new(date.year, date.month, date.day, time.hour, time.min, time.sec)
+  end
 end
 
 # TODO: we shouldn't need this
@@ -107,4 +114,5 @@ class IceCube::Schedule
     to_hash == other.to_hash
   end
 end
+
 
