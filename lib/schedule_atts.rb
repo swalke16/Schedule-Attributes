@@ -9,7 +9,7 @@ module ScheduleAtts
   def schedule
     @schedule ||= begin
       if schedule_yaml.blank?
-        IceCube::Schedule.new(Date.today.to_time).tap{|sched| sched.add_recurrence_rule(IceCube::Rule.daily) }
+        IceCube::Schedule.new(Date.today.to_time)
       else
         IceCube::Schedule.from_yaml(schedule_yaml)
       end
